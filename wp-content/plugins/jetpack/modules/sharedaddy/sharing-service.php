@@ -1,6 +1,8 @@
 <?php
 
 use Automattic\Jetpack\Assets;
+use Automattic\Jetpack\Redirect;
+use Automattic\Jetpack\Status;
 use Automattic\Jetpack\Sync\Settings;
 
 include_once dirname( __FILE__ ) . '/sharing-sources.php';
@@ -28,8 +30,7 @@ class Sharing_Service {
 	 * Gets a generic list of all services, without any config
 	 */
 	public function get_all_services_blog() {
-		$options = get_option( 'sharing-options' );
-
+		$options  = get_option( 'sharing-options' );
 		$all      = $this->get_all_services();
 		$services = array();
 
@@ -667,7 +668,7 @@ function sharing_process_requests() {
 	global $post;
 
 	// Only process if: single post and share=X defined
-	if ( ( is_page() || is_single() ) && isset( $_GET['share'] ) ) {
+	if ( ( is_page() || is_single() ) && isset( $_GET['share'] ) && is_string( $_GET['share'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$sharer = new Sharing_Service();
 
 		$service = $sharer->get_service( $_GET['share'] );
@@ -677,6 +678,15 @@ function sharing_process_requests() {
 	}
 }
 add_action( 'template_redirect', 'sharing_process_requests', 9 );
+
+/**
+ * Gets the url to customise the sharing buttons in Calypso.
+ *
+ * @return string the customisation URL or null if it couldn't be determinde.
+ */
+function get_sharing_buttons_customisation_url() {
+	return Redirect::get_url( 'calypso-marketing-sharing-buttons', array( 'site' => ( new Status() )->get_site_suffix() ) );
+}
 
 /**
  * Append sharing links to text.
@@ -774,6 +784,11 @@ function sharing_display( $text = '', $echo = false ) {
 		$show = false;
 	}
 
+	// Hide on password protected posts unless password is provided.
+	if ( post_password_required( $post->ID ) ) {
+			$show = false;
+	}
+
 	/**
 	 * Filter the Sharing buttons' Ajax action name Jetpack checks for.
 	 * This allows the use of the buttons with your own Ajax implementation.
@@ -867,6 +882,15 @@ function sharing_display( $text = '', $echo = false ) {
 			$sharing_content .= implode( '', $parts );
 			$sharing_content .= '<li class="share-end"></li></ul>';
 
+			// Link to customization options if user can manage them.
+			if ( current_user_can( 'manage_options' ) ) {
+				$link_url = get_sharing_buttons_customisation_url();
+				if ( ! empty( $link_url ) ) {
+					$link_text        = __( 'Customize buttons', 'jetpack' );
+					$sharing_content .= '<p class="share-customize-link"><a href="' . esc_url( $link_url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $link_text ) . '</a></p>';
+				}
+			}
+
 			if ( count( $enabled['hidden'] ) > 0 ) {
 				$sharing_content .= '<div class="sharing-hidden"><div class="inner" style="display: none;';
 
@@ -913,7 +937,7 @@ function sharing_display( $text = '', $echo = false ) {
 			if ( defined( 'JETPACK__VERSION' ) ) {
 				$ver = JETPACK__VERSION;
 			} else {
-				$ver = '20141212';
+				$ver = '20201124';
 			}
 
 			// @todo: Investigate if we can load this JS in the footer instead.
@@ -923,7 +947,7 @@ function sharing_display( $text = '', $echo = false ) {
 					'_inc/build/sharedaddy/sharing.min.js',
 					'modules/sharedaddy/sharing.js'
 				),
-				array( 'jquery' ),
+				array(),
 				$ver,
 				false
 			);
@@ -970,7 +994,7 @@ function get_base_recaptcha_lang_code() {
 		'tr'    => 'tr',
 	);
 
-	$blog_lang_code = function_exists( 'get_blog_lang_code' ) ? get_blog_lang_code() : get_bloginfo( 'language' );
+	$blog_lang_code = get_bloginfo( 'language' );
 	if ( isset( $base_recaptcha_lang_code_mapping[ $blog_lang_code ] ) ) {
 		return $base_recaptcha_lang_code_mapping[ $blog_lang_code ];
 	}
