@@ -857,7 +857,7 @@ div.wpforms-container-full .wpforms-datepicker-wrap {
 
 div.wpforms-container-full .wpforms-datepicker-wrap .wpforms-datepicker-clear {
 	position: absolute;
-	background-image: url(http://localhost/avventoapps.github.io/avventohome.org/wp-content/plugins/wpforms-lite/assets/images/times-solid-white.svg);
+	background-image: url(../images/times-solid-white.svg);
 	background-position: 50% 50%;
 	background-repeat: no-repeat;
 	background-color: #cccccc;

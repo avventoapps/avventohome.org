@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>Uncategorized &#8211; AvventoHome</title>
+	<atom:link href="https://avventoapps.github.io/avventohome.org/category/uncategorized/feed/" rel="self" type="application/rss+xml" />
+	<link>https://avventoapps.github.io/avventohome.org</link>
+	<description>Housing ministerial needs hastening Christ’s second Advent.</description>
+	<lastBuildDate>Fri, 17 May 2019 17:48:28 +0000</lastBuildDate>
+	<language>en-US</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>https://wordpress.org/?v=5.8.2</generator>
+
+<image>
+	<url>https://avventoapps.github.io/avventohome.org/wp-content/uploads/2018/11/cropped-IMG_20171221_212536-32x32.jpg</url>
+	<title>Uncategorized &#8211; AvventoHome</title>
+	<link>https://avventoapps.github.io/avventohome.org</link>
+	<width>32</width>
+	<height>32</height>
+</image> 
+	<item>
+		<title>AvventoHome 2019 Calendar</title>
+		<link>https://avventoapps.github.io/avventohome.org/avventohome-2019-calendar/</link>
+		
+		<dc:creator><![CDATA[Kaweesi Joseph]]></dc:creator>
+		<pubDate>Fri, 17 May 2019 17:48:22 +0000</pubDate>
+				<category><![CDATA[Uncategorized]]></category>
+		<guid isPermaLink="false">https://avventoapps.github.io/avventohome.org/?p=293</guid>
+
+					<description><![CDATA[You can also subscribe to receive updates from this website from our newsletter department.]]></description>
+										<content:encoded><![CDATA[
+<a href="https://avventoapps.github.io/avventohome.org/wp-content/uploads/2019/05/avventoCalendar2019.pdf" class="pdfemb-viewer" style="" data-width="max" data-height="max"  data-toolbar="bottom" data-toolbar-fixed="off">avventoCalendar2019<br/></a>
+
+
+
+<p>You can also subscribe to receive updates from this website from our <a href="https://avventoapps.github.io/avventohome.org/newsletter">newsletter</a> department.</p>
+]]></content:encoded>
+					
+		
+		
+			</item>
+	</channel>
+</rss>

@@ -131,11 +131,11 @@ p.spu-powered a{
 
 @font-face {
     font-family: 'spufont';
-    src:url('http://localhost/avventoapps.github.io/avventohome.org/wp-content/plugins/popups/public/assets/fonts/spufont.eot?sze5my');
-    src:url('http://localhost/avventoapps.github.io/avventohome.org/wp-content/plugins/popups/public/assets/fonts/spufont.eot#iefixsze5my') format('embedded-opentype'),
-    url('http://localhost/avventoapps.github.io/avventohome.org/wp-content/plugins/popups/public/assets/fonts/spufont.woff?sze5my') format('woff'),
-    url('http://localhost/avventoapps.github.io/avventohome.org/wp-content/plugins/popups/public/assets/fonts/spufont.ttf?sze5my') format('truetype'),
-    url('http://localhost/avventoapps.github.io/avventohome.org/wp-content/plugins/popups/public/assets/fonts/spufont.svg?sze5my#spufont') format('svg');
+    src:url('../fonts/spufont.eot?sze5my');
+    src:url('../fonts/spufont.eot?#iefixsze5my') format('embedded-opentype'),
+    url('../fonts/spufont.woff?sze5my') format('woff'),
+    url('../fonts/spufont.ttf?sze5my') format('truetype'),
+    url('../fonts/spufont.svg?sze5my#spufont') format('svg');
     font-weight: normal;
     font-style: normal;
 }
