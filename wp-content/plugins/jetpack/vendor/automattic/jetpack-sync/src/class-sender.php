@@ -9,7 +9,6 @@ namespace Automattic\Jetpack\Sync;
 
 use Automattic\Jetpack\Connection\Manager;
 use Automattic\Jetpack\Constants;
-use WP_Error;
 
 /**
  * This class grabs pending actions from the queue and sends them
@@ -188,7 +187,7 @@ class Sender {
 	private function init() {
 		add_action( 'jetpack_sync_before_send_queue_sync', array( $this, 'maybe_set_user_from_token' ), 1 );
 		add_action( 'jetpack_sync_before_send_queue_sync', array( $this, 'maybe_clear_user_from_token' ), 20 );
-		add_filter( 'jetpack_xmlrpc_unauthenticated_methods', array( $this, 'register_jetpack_xmlrpc_methods' ) );
+		add_filter( 'jetpack_xmlrpc_methods', array( $this, 'register_jetpack_xmlrpc_methods' ) );
 		foreach ( Modules::get_modules() as $module ) {
 			$module->init_before_send();
 		}
@@ -254,42 +253,17 @@ class Sender {
 	 *
 	 * @access public
 	 *
-	 * @return boolean|WP_Error True if this sync sending was successful, error object otherwise.
+	 * @return boolean|\WP_Error True if this sync sending was successful, error object otherwise.
 	 */
 	public function do_full_sync() {
-		$sync_module = Modules::get_module( 'full-sync' );
-		if ( ! $sync_module ) {
+		if ( ! Modules::get_module( 'full-sync' ) ) {
 			return;
 		}
-		// Full Sync Disabled.
 		if ( ! Settings::get_setting( 'full_sync_sender_enabled' ) ) {
 			return;
 		}
-
-		// Don't sync if request is marked as read only.
-		if ( Constants::is_true( 'JETPACK_SYNC_READ_ONLY' ) ) {
-			return new WP_Error( 'jetpack_sync_read_only' );
-		}
-
-		// Sync not started or Sync finished.
-		$status = $sync_module->get_status();
-		if ( false === $status['started'] || ( ! empty( $status['started'] ) && ! empty( $status['finished'] ) ) ) {
-			return false;
-		}
-
 		$this->continue_full_sync_enqueue();
-		// immediate full sync sends data in continue_full_sync_enqueue.
-		if ( false === strpos( get_class( $sync_module ), 'Full_Sync_Immediately' ) ) {
-			return $this->do_sync_and_set_delays( $this->full_sync_queue );
-		} else {
-			$status = $sync_module->get_status();
-			// Sync not started or Sync finished.
-			if ( false === $status['started'] || ( ! empty( $status['started'] ) && ! empty( $status['finished'] ) ) ) {
-				return false;
-			} else {
-				return true;
-			}
-		}
+		return $this->do_sync_and_set_delays( $this->full_sync_queue );
 	}
 
 	/**
@@ -318,7 +292,7 @@ class Sender {
 	 *
 	 * @access public
 	 *
-	 * @return boolean|WP_Error True if this sync sending was successful, error object otherwise.
+	 * @return boolean|\WP_Error True if this sync sending was successful, error object otherwise.
 	 */
 	public function do_sync() {
 		return $this->do_sync_and_set_delays( $this->sync_queue );
@@ -333,37 +307,21 @@ class Sender {
 	 * @access public
 	 *
 	 * @param Automattic\Jetpack\Sync\Queue $queue Queue object.
-	 *
-	 * @return boolean|WP_Error True if this sync sending was successful, error object otherwise.
+	 * @return boolean|\WP_Error True if this sync sending was successful, error object otherwise.
 	 */
 	public function do_sync_and_set_delays( $queue ) {
 		// Don't sync if importing.
 		if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
-			return new WP_Error( 'is_importing' );
-		}
-
-		// Don't sync if request is marked as read only.
-		if ( Constants::is_true( 'JETPACK_SYNC_READ_ONLY' ) ) {
-			return new WP_Error( 'jetpack_sync_read_only' );
+			return new \WP_Error( 'is_importing' );
 		}
 
 		if ( ! Settings::is_sender_enabled( $queue->id ) ) {
-			return new WP_Error( 'sender_disabled_for_queue_' . $queue->id );
-		}
-
-		// Return early if we've gotten a retry-after header response.
-		$retry_time = get_option( Actions::RETRY_AFTER_PREFIX . $queue->id );
-		if ( $retry_time ) {
-			// If expired update to false but don't send. Send will occurr in new request to avoid race conditions.
-			if ( microtime( true ) > $retry_time ) {
-				update_option( Actions::RETRY_AFTER_PREFIX . $queue->id, false, false );
-			}
-			return new WP_Error( 'retry_after' );
+			return new \WP_Error( 'sender_disabled_for_queue_' . $queue->id );
 		}
 
 		// Don't sync if we are throttled.
 		if ( $this->get_next_sync_time( $queue->id ) > microtime( true ) ) {
-			return new WP_Error( 'sync_throttled' );
+			return new \WP_Error( 'sync_throttled' );
 		}
 
 		$start_time = microtime( true );
@@ -406,10 +364,6 @@ class Sender {
 		$upload_size   = 0;
 		$items_to_send = array();
 		$items         = is_array( $buffer_or_items ) ? $buffer_or_items : $buffer_or_items->get_items();
-		if ( ! is_array( $items ) ) {
-			$items = array();
-		}
-
 		// Set up current screen to avoid errors rendering content.
 		require_once ABSPATH . 'wp-admin/includes/class-wp-screen.php';
 		require_once ABSPATH . 'wp-admin/includes/screen.php';
@@ -427,25 +381,23 @@ class Sender {
 			 * For example, during full sync this expands Post ID's into full Post objects,
 			 * so that we don't have to serialize the whole object into the queue.
 			 *
-			 * @since 1.6.3
-			 * @since-jetpack 4.2.0
+			 * @since 4.2.0
 			 *
 			 * @param array The action parameters
 			 * @param int The ID of the user who triggered the action
 			 */
 			$item[1] = apply_filters( 'jetpack_sync_before_send_' . $item[0], $item[1], $item[2] );
 			wp_suspend_cache_addition( false );
-			// Serialization usage can lead to empty, null or false action_name. Lets skip as there is no information to send.
-			if ( empty( $item[0] ) || false === $item[1] ) {
+			if ( false === $item[1] ) {
 				$skipped_items_ids[] = $key;
 				continue;
 			}
-			$encoded_item = $this->codec->encode( $item );
+			$encoded_item = $encode ? $this->codec->encode( $item ) : $item;
 			$upload_size += strlen( $encoded_item );
 			if ( $upload_size > $this->upload_max_bytes && count( $items_to_send ) > 0 ) {
 				break;
 			}
-			$items_to_send[ $key ] = $encode ? $encoded_item : $item;
+			$items_to_send[ $key ] = $encoded_item;
 			if ( microtime( true ) - $start_time > $this->max_dequeue_time ) {
 				break;
 			}
@@ -472,15 +424,13 @@ class Sender {
 	 * @access public
 	 *
 	 * @param Automattic\Jetpack\Sync\Queue $queue Queue object.
-	 *
-	 * @return boolean|WP_Error True if this sync sending was successful, error object otherwise.
+	 * @return boolean|\WP_Error True if this sync sending was successful, error object otherwise.
 	 */
 	public function do_sync_for_queue( $queue ) {
 		do_action( 'jetpack_sync_before_send_queue_' . $queue->id );
 		if ( $queue->size() === 0 ) {
-			return new WP_Error( 'empty_queue_' . $queue->id );
+			return new \WP_Error( 'empty_queue_' . $queue->id );
 		}
-
 		/**
 		 * Now that we're sure we are about to sync, try to ignore user abort
 		 * so we can avoid getting into a bad state.
@@ -500,7 +450,7 @@ class Sender {
 
 		if ( ! $buffer ) {
 			// Buffer has no items.
-			return new WP_Error( 'empty_buffer' );
+			return new \WP_Error( 'empty_buffer' );
 		}
 
 		if ( is_wp_error( $buffer ) ) {
@@ -516,8 +466,7 @@ class Sender {
 			 * Return false or WP_Error to abort the sync (e.g. if there's an error)
 			 * The items will be automatically re-sent later
 			 *
-			 * @since 1.6.3
-			 * @since-jetpack 4.2.0
+			 * @since 4.2.0
 			 *
 			 * @param array  $data The action buffer
 			 * @param string $codec The codec name used to encode the data
@@ -528,56 +477,51 @@ class Sender {
 			 * @param int    $queue_size The size of the sync queue at the time of processing.
 			 */
 			Settings::set_is_sending( true );
-			$processed_item_ids = apply_filters( 'jetpack_sync_send_data', $items_to_send, $this->codec->name(), microtime( true ), $queue->id, $checkout_duration, $preprocess_duration, $queue->size(), $buffer->id );
+			$processed_item_ids = apply_filters( 'jetpack_sync_send_data', $items_to_send, $this->codec->name(), microtime( true ), $queue->id, $checkout_duration, $preprocess_duration, $queue->size() );
 			Settings::set_is_sending( false );
 		} else {
 			$processed_item_ids = $skipped_items_ids;
 			$skipped_items_ids  = array();
 		}
 
-		if ( 'non-blocking' !== $processed_item_ids ) {
-			if ( ! $processed_item_ids || is_wp_error( $processed_item_ids ) ) {
-				$checked_in_item_ids = $queue->checkin( $buffer );
-				if ( is_wp_error( $checked_in_item_ids ) ) {
-					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-					error_log( 'Error checking in buffer: ' . $checked_in_item_ids->get_error_message() );
-					$queue->force_checkin();
-				}
-				if ( is_wp_error( $processed_item_ids ) ) {
-					return new WP_Error( 'wpcom_error', $processed_item_ids->get_error_code() );
-				}
-
-				// Returning a wpcom_error is a sign to the caller that we should wait a while before syncing again.
-				return new WP_Error( 'wpcom_error', 'jetpack_sync_send_data_false' );
-			} else {
-				// Detect if the last item ID was an error.
-				$had_wp_error = is_wp_error( end( $processed_item_ids ) );
-				if ( $had_wp_error ) {
-					$wp_error = array_pop( $processed_item_ids );
-				}
-				// Also checkin any items that were skipped.
-				if ( count( $skipped_items_ids ) > 0 ) {
-					$processed_item_ids = array_merge( $processed_item_ids, $skipped_items_ids );
-				}
-				$processed_items = array_intersect_key( $items, array_flip( $processed_item_ids ) );
-				/**
-				 * Allows us to keep track of all the actions that have been sent.
-				 * Allows us to calculate the progress of specific actions.
-				 *
-				 * @since 1.6.3
-				 * @since-jetpack 4.2.0
-				 *
-				 * @param array $processed_actions The actions that we send successfully.
-				 */
-				do_action( 'jetpack_sync_processed_actions', $processed_items );
-				$queue->close( $buffer, $processed_item_ids );
-				// Returning a WP_Error is a sign to the caller that we should wait a while before syncing again.
-				if ( $had_wp_error ) {
-					return new WP_Error( 'wpcom_error', $wp_error->get_error_code() );
-				}
+		if ( ! $processed_item_ids || is_wp_error( $processed_item_ids ) ) {
+			$checked_in_item_ids = $queue->checkin( $buffer );
+			if ( is_wp_error( $checked_in_item_ids ) ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'Error checking in buffer: ' . $checked_in_item_ids->get_error_message() );
+				$queue->force_checkin();
+			}
+			if ( is_wp_error( $processed_item_ids ) ) {
+				return new \WP_Error( 'wpcom_error', $processed_item_ids->get_error_code() );
+			}
+			// Returning a wpcom_error is a sign to the caller that we should wait a while before syncing again.
+			return new \WP_Error( 'wpcom_error', 'jetpack_sync_send_data_false' );
+		} else {
+			// Detect if the last item ID was an error.
+			$had_wp_error = is_wp_error( end( $processed_item_ids ) );
+			if ( $had_wp_error ) {
+				$wp_error = array_pop( $processed_item_ids );
+			}
+			// Also checkin any items that were skipped.
+			if ( count( $skipped_items_ids ) > 0 ) {
+				$processed_item_ids = array_merge( $processed_item_ids, $skipped_items_ids );
+			}
+			$processed_items = array_intersect_key( $items, array_flip( $processed_item_ids ) );
+			/**
+			 * Allows us to keep track of all the actions that have been sent.
+			 * Allows us to calculate the progress of specific actions.
+			 *
+			 * @since 4.2.0
+			 *
+			 * @param array $processed_actions The actions that we send successfully.
+			 */
+			do_action( 'jetpack_sync_processed_actions', $processed_items );
+			$queue->close( $buffer, $processed_item_ids );
+			// Returning a WP_Error is a sign to the caller that we should wait a while before syncing again.
+			if ( $had_wp_error ) {
+				return new \WP_Error( 'wpcom_error', $wp_error->get_error_code() );
 			}
 		}
-
 		return true;
 	}
 
@@ -608,8 +552,7 @@ class Sender {
 		 *
 		 * @param array $processed_actions The actions that we send successfully.
 		 *
-		 * @since 1.6.3
-		 * @since-jetpack 4.2.0
+		 * @since 4.2.0
 		 */
 		do_action( 'jetpack_sync_processed_actions', $action_to_send );
 
@@ -659,8 +602,7 @@ class Sender {
 	 * Register additional sync XML-RPC methods available to Jetpack for authenticated users.
 	 *
 	 * @access public
-	 * @since 1.6.3
-	 * @since-jetpack 7.8.0
+	 * @since 7.8
 	 *
 	 * @param array $jetpack_methods XML-RPC methods available to the Jetpack Server.
 	 * @return array Filtered XML-RPC methods.

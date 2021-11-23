@@ -15,7 +15,6 @@
  *   }
  *   ...
  *   meta: { # Not defined in this file. Handled in modules/publicize/publicize.php via `register_meta()`
- *     jetpack_publicize_feature_enabled: (boolean) Is this publicize feature enabled?
  *     jetpack_publicize_message: (string) The message to use instead of the post's title when sharing.
  *   }
  *   ...

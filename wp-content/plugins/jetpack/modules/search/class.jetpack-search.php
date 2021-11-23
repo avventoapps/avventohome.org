@@ -10,7 +10,7 @@
 
 use Automattic\Jetpack\Connection\Client;
 
-require_once __DIR__ . '/class-jetpack-search-options.php';
+require_once dirname( __FILE__ ) . '/class-jetpack-search-options.php';
 
 /**
  * The main class for the Jetpack Search module.
@@ -140,7 +140,7 @@ class Jetpack_Search {
 	public static function instance() {
 		if ( ! isset( self::$instance ) ) {
 			if ( Jetpack_Search_Options::is_instant_enabled() ) {
-				require_once __DIR__ . '/class-jetpack-instant-search.php';
+				require_once dirname( __FILE__ ) . '/class-jetpack-instant-search.php';
 				self::$instance = new Jetpack_Instant_Search();
 			} else {
 				self::$instance = new Jetpack_Search();
@@ -160,7 +160,7 @@ class Jetpack_Search {
 	 * @since 5.0.0
 	 */
 	public function setup() {
-		if ( ! Jetpack::is_connection_ready() || ! $this->is_search_supported() ) {
+		if ( ! Jetpack::is_active() || ! $this->is_search_supported() ) {
 			/**
 			 * Fires when the Jetpack Search fails and would fallback to MySQL.
 			 *
@@ -192,15 +192,8 @@ class Jetpack_Search {
 	 * @since 8.3.0
 	 */
 	public function load_php() {
-		$this->base_load_php();
-	}
-
-	/**
-	 * Loads the PHP common to all search. Should be called from extending classes.
-	 */
-	protected function base_load_php() {
-		require_once __DIR__ . '/class.jetpack-search-helpers.php';
-		require_once __DIR__ . '/class.jetpack-search-template-tags.php';
+		require_once dirname( __FILE__ ) . '/class.jetpack-search-helpers.php';
+		require_once dirname( __FILE__ ) . '/class.jetpack-search-template-tags.php';
 		require_once JETPACK__PLUGIN_DIR . 'modules/widgets/search.php';
 	}
 
@@ -301,7 +294,7 @@ class Jetpack_Search {
 		if ( $this->last_query_info ) {
 			printf(
 				'<!-- Jetpack Search took %s ms, ES time %s ms -->',
-				(int) $this->last_query_info['elapsed_time'],
+				intval( $this->last_query_info['elapsed_time'] ),
 				esc_html( $this->last_query_info['es_time'] )
 			);
 
@@ -552,7 +545,6 @@ class Jetpack_Search {
 			'post_type'           => 'any',
 			'ignore_sticky_posts' => true,
 			'suppress_filters'    => true,
-			'posts_per_page'      => $query->get( 'posts_per_page' ),
 		);
 
 		$posts_query = new WP_Query( $args );
@@ -805,7 +797,7 @@ class Jetpack_Search {
 	 * @module search
 	 */
 	public function action__widgets_init() {
-		require_once __DIR__ . '/class.jetpack-search-widget-filters.php';
+		require_once dirname( __FILE__ ) . '/class.jetpack-search-widget-filters.php';
 
 		register_widget( 'Jetpack_Search_Widget_Filters' );
 	}
@@ -1282,9 +1274,6 @@ class Jetpack_Search {
 	 */
 	public function add_aggregations_to_es_query_builder( array $aggregations, Jetpack_WPES_Query_Builder $builder ) {
 		foreach ( $aggregations as $label => $aggregation ) {
-			if ( ! isset( $aggregation['type'] ) ) {
-				continue;
-			}
 			switch ( $aggregation['type'] ) {
 				case 'taxonomy':
 					$this->add_taxonomy_aggregation_to_es_query_builder( $aggregation, $label, $builder );
@@ -1378,7 +1367,7 @@ class Jetpack_Search {
 		);
 
 		if ( isset( $aggregation['min_doc_count'] ) ) {
-			$args['min_doc_count'] = (int) $aggregation['min_doc_count'];
+			$args['min_doc_count'] = intval( $aggregation['min_doc_count'] );
 		} else {
 			$args['min_doc_count'] = 1;
 		}
@@ -1445,6 +1434,21 @@ class Jetpack_Search {
 	}
 
 	/**
+	 * Set the search's facets (deprecated).
+	 *
+	 * @deprecated 5.0 Please use Jetpack_Search::set_filters() instead.
+	 *
+	 * @see        Jetpack_Search::set_filters()
+	 *
+	 * @param array $facets Array of facets to apply to the search.
+	 */
+	public function set_facets( array $facets ) {
+		_deprecated_function( __METHOD__, 'jetpack-5.0', 'Jetpack_Search::set_filters()' );
+
+		$this->set_filters( $facets );
+	}
+
+	/**
 	 * Get the raw Aggregation results from the Elasticsearch response.
 	 *
 	 * @since  5.0.0
@@ -1463,6 +1467,21 @@ class Jetpack_Search {
 		}
 
 		return $aggregations;
+	}
+
+	/**
+	 * Get the raw Facet results from the Elasticsearch response.
+	 *
+	 * @deprecated 5.0 Please use Jetpack_Search::get_search_aggregations_results() instead.
+	 *
+	 * @see        Jetpack_Search::get_search_aggregations_results()
+	 *
+	 * @return array Array of Facets performed on the search.
+	 */
+	public function get_search_facets() {
+		_deprecated_function( __METHOD__, 'jetpack-5.0', 'Jetpack_Search::get_search_aggregations_results()' );
+
+		return $this->get_search_aggregations_results();
 	}
 
 	/**
@@ -1743,6 +1762,21 @@ class Jetpack_Search {
 	}
 
 	/**
+	 * Get the results of the facets performed.
+	 *
+	 * @deprecated 5.0 Please use Jetpack_Search::get_filters() instead.
+	 *
+	 * @see        Jetpack_Search::get_filters()
+	 *
+	 * @return array $facets Array of facets applied and info about them.
+	 */
+	public function get_search_facet_data() {
+		_deprecated_function( __METHOD__, 'jetpack-5.0', 'Jetpack_Search::get_filters()' );
+
+		return $this->get_filters();
+	}
+
+	/**
 	 * Get the filters that are currently applied to this search.
 	 *
 	 * @since 5.0.0
@@ -1769,6 +1803,21 @@ class Jetpack_Search {
 		}
 
 		return $active_buckets;
+	}
+
+	/**
+	 * Get the filters that are currently applied to this search.
+	 *
+	 * @deprecated 5.0 Please use Jetpack_Search::get_active_filter_buckets() instead.
+	 *
+	 * @see        Jetpack_Search::get_active_filter_buckets()
+	 *
+	 * @return array Array of filters that were applied.
+	 */
+	public function get_current_filters() {
+		_deprecated_function( __METHOD__, 'jetpack-5.0', 'Jetpack_Search::get_active_filter_buckets()' );
+
+		return $this->get_active_filter_buckets();
 	}
 
 	/**
@@ -1863,8 +1912,10 @@ class Jetpack_Search {
 	 * Moves any active search widgets to the inactive category.
 	 *
 	 * @since 5.9.0
+	 *
+	 * @param string $module Unused. The Jetpack module being disabled.
 	 */
-	public function move_search_widgets_to_inactive() {
+	public function move_search_widgets_to_inactive( $module ) {
 		if ( ! is_active_widget( false, false, Jetpack_Search_Helpers::FILTER_WIDGET_BASE, true ) ) {
 			return;
 		}

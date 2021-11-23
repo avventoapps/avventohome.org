@@ -94,9 +94,6 @@ class Plugins extends Module {
 	 * @param bool|WP_Error $response Install response, true if successful, WP_Error if not.
 	 */
 	public function populate_plugins( $response ) {
-		if ( ! function_exists( 'get_plugins' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
 		$this->plugins = get_plugins();
 		return $response;
 	}
@@ -146,8 +143,7 @@ class Plugins extends Module {
 						/**
 						 * Sync that a plugin update failed
 						 *
-						 * @since 1.6.3
-						 * @since-jetpack 5.8.0
+						 * @since  5.8.0
 						 *
 						 * @module sync
 						 *
@@ -163,8 +159,7 @@ class Plugins extends Module {
 				/**
 				 * Sync that a plugin update
 				 *
-				 * @since 1.6.3
-				 * @since-jetpack 5.8.0
+				 * @since  5.8.0
 				 *
 				 * @module sync
 				 *
@@ -180,8 +175,7 @@ class Plugins extends Module {
 			 * Signals to the sync listener that a plugin was installed and a sync action
 			 * reflecting the installation and the plugin info should be sent
 			 *
-			 * @since 1.6.3
-			 * @since-jetpack 5.8.0
+			 * @since  5.8.0
 			 *
 			 * @module sync
 			 *
@@ -273,8 +267,7 @@ class Plugins extends Module {
 		/**
 		 * Helps Sync log that a plugin was edited
 		 *
-		 * @since 1.6.3
-		 * @since-jetpack 4.9.0
+		 * @since 4.9.0
 		 *
 		 * @param string $plugin, Plugin slug
 		 * @param mixed $plugins[ $plugin ], Array of plugin data

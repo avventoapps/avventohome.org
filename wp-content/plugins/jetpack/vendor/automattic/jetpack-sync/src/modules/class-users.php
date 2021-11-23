@@ -8,7 +8,6 @@
 namespace Automattic\Jetpack\Sync\Modules;
 
 use Automattic\Jetpack\Constants as Jetpack_Constants;
-use Automattic\Jetpack\Password_Checker;
 use Automattic\Jetpack\Sync\Defaults;
 
 /**
@@ -76,7 +75,7 @@ class Users extends Module {
 	 */
 	public function get_object_by_id( $object_type, $id ) {
 		if ( 'user' === $object_type ) {
-			$user = get_user_by( 'id', (int) $id );
+			$user = get_user_by( 'id', intval( $id ) );
 			if ( $user ) {
 				return $this->sanitize_user_and_expand( $user );
 			}
@@ -332,8 +331,7 @@ class Users extends Module {
 		/**
 		 * Fires when a user is logged into a site.
 		 *
-		 * @since 1.6.3
-		 * @since-jetpack 7.2.0
+		 * @since 7.2.0
 		 *
 		 * @param int      $user_id The user ID.
 		 * @param \WP_User $user    The User Object  of the user that currently logged in.
@@ -364,7 +362,8 @@ class Users extends Module {
 			return $user;
 		}
 
-		$password_checker = new Password_Checker( $user->ID );
+		jetpack_require_lib( 'class.jetpack-password-checker' );
+		$password_checker = new \Jetpack_Password_Checker( $user->ID );
 
 		$test_results = $password_checker->test( $password, true );
 
@@ -397,8 +396,7 @@ class Users extends Module {
 		/**
 		 * Fires when a user is deleted on a site
 		 *
-		 * @since 1.6.3
-		 * @since-jetpack 5.4.0
+		 * @since 5.4.0
 		 *
 		 * @param int $deleted_user_id - ID of the deleted user.
 		 * @param int $reassigned_user_id - ID of the user the deleted user's posts are reassigned to (if any).
@@ -426,8 +424,7 @@ class Users extends Module {
 		/**
 		 * Fires when a new user is registered on a site
 		 *
-		 * @since 1.6.3
-		 * @since-jetpack 4.9.0
+		 * @since 4.9.0
 		 *
 		 * @param object The WP_User object
 		 */
@@ -456,8 +453,7 @@ class Users extends Module {
 		/**
 		 * Fires when a user is added on a site
 		 *
-		 * @since 1.6.3
-		 * @since-jetpack 4.9.0
+		 * @since 4.9.0
 		 *
 		 * @param object The WP_User object
 		 */
@@ -497,7 +493,7 @@ class Users extends Module {
 			 * that got us to this point so if it's still set then this was a user confirming
 			 * their new email address.
 			 */
-			if ( 1 === (int) get_user_meta( $user->ID, '_new_email', true ) ) {
+			if ( 1 === intval( get_user_meta( $user->ID, '_new_email', true ) ) ) {
 				$this->flags[ $user_id ]['email_changed'] = true;
 			}
 		}
@@ -505,8 +501,7 @@ class Users extends Module {
 		/**
 		 * Fires when the client needs to sync an updated user.
 		 *
-		 * @since 1.6.3
-		 * @since-jetpack 4.2.0
+		 * @since 4.2.0
 		 *
 		 * @param \WP_User The WP_User object
 		 * @param array    State - New since 5.8.0
@@ -595,7 +590,7 @@ class Users extends Module {
 	 * @param string $meta_key Meta key.
 	 * @param mixed  $value    Meta value.
 	 */
-	public function maybe_save_user_meta( $meta_id, $user_id, $meta_key, $value ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+	public function maybe_save_user_meta( $meta_id, $user_id, $meta_key, $value ) {
 		if ( 'locale' === $meta_key ) {
 			$this->add_flags( $user_id, array( 'locale_changed' => true ) );
 		}
@@ -747,7 +742,7 @@ class Users extends Module {
 	 * @param int $user_id ID of the user.
 	 * @param int $blog_id ID of the blog.
 	 */
-	public function remove_user_from_blog_handler( $user_id, $blog_id ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+	public function remove_user_from_blog_handler( $user_id, $blog_id ) {
 		// User is removed on add, see https://github.com/WordPress/WordPress/blob/0401cee8b36df3def8e807dd766adc02b359dfaf/wp-includes/ms-functions.php#L2114.
 		if ( $this->is_add_new_user_to_blog() ) {
 			return;
@@ -759,8 +754,7 @@ class Users extends Module {
 		/**
 		 * Fires when a user is removed from a blog on a multisite installation
 		 *
-		 * @since 1.6.3
-		 * @since-jetpack 5.4.0
+		 * @since 5.4.0
 		 *
 		 * @param int $user_id - ID of the removed user
 		 * @param int $reassigned_user_id - ID of the user the removed user's posts are reassigned to (if any).

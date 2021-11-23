@@ -9,32 +9,34 @@ class MetaSlider_Slideshow_Settings {
 
 	/**
 	 * Themes class
-	 *
-	 * @var object | bool
+	 * 
+	 * @var object
 	 */
 	private $settings;
 
 	/**
 	 * Constructor
-	 *
+	 * 
 	 * @param string|null $slideshow_id The settings object
 	 */
 	public function __construct($slideshow_id = null) {
-		$this->settings = get_post_meta($slideshow_id, 'ml-slider_settings', true);
+		// If null, WP will return false
+		$settings = get_post_meta($slideshow_id, 'ml-slider_settings', true);
+		$this->settings = $settings ? $settings : $this->defaults();
 	}
 
 	/**
 	 * Returns settings
 	 *
-	 * @return object
+	 * @return array
 	 */
 	public function get_settings() {
-		return $this->settings ? $this->settings : self::defaults();
+		return $this->settings;
 	}
 
 	/**
 	 * Returns a single setting
-	 *
+	 * 
 	 * @param string $setting A single setting name
 	 *
 	 * @return mixed|WP_error The setting result or an error object
@@ -46,11 +48,10 @@ class MetaSlider_Slideshow_Settings {
 	/**
 	 * Returns the default settings
 	 *
-	 * @return array
+	 * @return array 
 	 */
-	public static function defaults() {
-		$defaults = array(
-			'title' => __('New Slideshow', 'ml-slider'),
+	public function defaults() {
+		$params = array(
 			'type' => 'flex',
 			'random' => false,
 			'cssClass' => '',
@@ -89,8 +90,6 @@ class MetaSlider_Slideshow_Settings {
 			'fullWidth' => true,
 			'noConflict' => true
 		);
-		$defaults = apply_filters('metaslider_default_parameters', $defaults);
-		$overrides = get_option('metaslider_default_settings');
-		return is_array($overrides) ? array_merge($defaults, $overrides) : $defaults;
+		return apply_filters('metaslider_default_parameters', $params);
 	}
 }

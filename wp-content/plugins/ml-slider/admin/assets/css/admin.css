@@ -1,16 +1,38 @@
 
-@import "tailwindcss/base";
-@import "tailwindcss/components";
+/* TODO: work toward complete Tailwind.css refactor (plus WP override, etc) */
+/**
+ * This injects Tailwind's base styles, which is a combination of
+ * Normalize.css and some additional base styles.
+ */
+@tailwind base;
 
+/**
+ * This injects any component classes registered by plugins.
+ */
+@tailwind components;
+
+/**
+ * Here you would add any of your custom component classes; stuff that you'd
+ * want loaded *before* the utilities so that the utilities could still
+ * override them.
+ * Example, UDP universal components
+ */
 @import "./components/toolbar.css";
 @import "./components/tour.css";
 
-@import "tailwindcss/utilities";
+/**
+ * This injects all of Tailwind's utility classes, generated based on your
+ * config file.
+ */
+@tailwind utilities;
 
-@import "./parts/_fonts.css";
+@import "./parts/fonts.css";
 @import "./parts/ie11.css";
 
-@import "./settings.css";
+/**
+ * Here you would add any custom styles you need that don't come out of the
+ * box with Tailwind.
+ */
 @import "./components/wordpress.css";
 @import "./components/forms.css";
 @import "./components/notifications.css";
@@ -21,11 +43,11 @@
 /* TODO: Add responsive styles, for now min-width */
 #metaslider-ui,
 .container {
-	min-width: theme('screens.lg');
+	min-width: theme('screens.xl');
 	@apply mx-auto px-2;
 }
 .container {
-	max-width: theme('screens.lg');
+	max-width: theme('screens.xl');
 }
 
 pre#shortcode::selection,
@@ -33,7 +55,7 @@ pre#shortcode *::selection {
 	@apply bg-blue-highlight text-gray-darker;
 }
 
-/* Consider everything after this a legacy style with the intent to
+/* Consider everything after this a legacy style with the intent to 
 eventually be removed/refactored */
 
 .metaslider.wrap div.updated,
@@ -86,7 +108,7 @@ eventually be removed/refactored */
 }
 
 .metaslider .ms-settings {
-	border-collapse: separate;
+	border-collapse: separate; 
   	border-spacing: 0 0.75rem;
 }
 .metaslider .ms-settings a {
@@ -162,10 +184,10 @@ eventually be removed/refactored */
     padding-left: 5px;
     margin-right: 0;
     color: #a9a9a9;
-    line-height: 20px;
-    right: 0;
-    width: 155px;
-    text-align: right;
+    line-height: 20px; 
+    right: 0; 
+    width: 155px; 
+    text-align: right; 
 }
 .rtl .metaslider .left table tr.slide .tabs-content .new_window {
     position: relative;
@@ -230,7 +252,7 @@ eventually be removed/refactored */
 }
 .metaslider .tabs-content .inherit-from-image .default {
 	display: block;
-}
+} 
 .metaslider .tabs-content .default .no-content {
     opacity: 0.3;
     font-style: italic;
@@ -355,7 +377,7 @@ eventually be removed/refactored */
     outline: none;
 }
 .metaslider .right .slider-lib-row {
-    padding: 0 0 9px 0;
+    padding: 17px 0 9px 0;
     text-align: center;
 }
 
@@ -735,7 +757,7 @@ eventually be removed/refactored */
 }
 .metaslider-ui button.hide-slide.toolbar-button input {
 	position: absolute;
-	top: 0;
+	top: 0; 
     visibility: hidden;
     opacity: 0;
 }

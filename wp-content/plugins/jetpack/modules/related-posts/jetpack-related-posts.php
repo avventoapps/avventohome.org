@@ -1,11 +1,10 @@
 <?php
 
 use Automattic\Jetpack\Assets;
-use Automattic\Jetpack\Blocks;
 use Automattic\Jetpack\Sync\Settings;
 
 class Jetpack_RelatedPosts {
-	const VERSION   = '20210930';
+	const VERSION   = '20191011';
 	const SHORTCODE = 'jetpack-related-posts';
 
 	private static $instance     = null;
@@ -73,7 +72,7 @@ class Jetpack_RelatedPosts {
 		// Add Related Posts to the REST API Post response.
 		add_action( 'rest_api_init', array( $this, 'rest_register_related_posts' ) );
 
-		Blocks::jetpack_register_block(
+		jetpack_register_block(
 			'jetpack/related-posts',
 			array(
 				'render_callback' => array( $this, 'render_block' ),
@@ -112,7 +111,7 @@ class Jetpack_RelatedPosts {
 	}
 
 	/**
-	 * Load related posts assets if it's an eligible front end page or execute search and return JSON if it's an endpoint request.
+	 * Load related posts assets if it's a elegiable front end page or execute search and return JSON if it's an endpoint request.
 	 *
 	 * @global $_GET
 	 * @action wp
@@ -164,8 +163,8 @@ class Jetpack_RelatedPosts {
 
 	/**
 	 * Adds a target to the post content to load related posts into if a shortcode for it did not already exist.
-	 * Will skip adding the target if the post content contains a Related Posts block, if the 'get_the_excerpt'
-	 * hook is in the current filter list, or if the site is running an FSE/Site Editor theme.
+	 * Will skip adding the target if the post content contains a Related Posts block or if the 'get_the_excerpt'
+	 * hook is in the current filter list.
 	 *
 	 * @filter the_content
 	 *
@@ -174,7 +173,7 @@ class Jetpack_RelatedPosts {
 	 * @returns string
 	 */
 	public function filter_add_target_to_dom( $content ) {
-		if ( has_block( 'jetpack/related-posts' ) || Blocks::is_fse_theme() ) {
+		if ( has_block( 'jetpack/related-posts' ) ) {
 			return $content;
 		}
 
@@ -303,12 +302,11 @@ EOT;
 
 		if ( ! empty( $block_attributes['show_thumbnails'] ) && ! empty( $related_post['img']['src'] ) ) {
 			$img_link = sprintf(
-				'<li class="jp-related-posts-i2__post-img-link"><a href="%1$s" %2$s><img src="%3$s" width="%4$s" height="%5$s" alt="%6$s" loading="lazy" /></a></li>',
+				'<li class="jp-related-posts-i2__post-img-link"><a href="%1$s" %2$s><img src="%3$s" width="%4$s" alt="%5$s" /></a></li>',
 				esc_url( $related_post['url'] ),
 				( ! empty( $related_post['rel'] ) ? 'rel="' . esc_attr( $related_post['rel'] ) . '"' : '' ),
 				esc_url( $related_post['img']['src'] ),
 				esc_attr( $related_post['img']['width'] ),
-				esc_attr( $related_post['img']['height'] ),
 				esc_attr( $related_post['img']['alt_text'] )
 			);
 
@@ -1140,7 +1138,7 @@ EOT;
 			foreach ( array_merge( $with_post_thumbnails, $no_post_thumbnails ) as $index => $real_post ) {
 				$related_posts[ $index ]['id']      = $real_post->ID;
 				$related_posts[ $index ]['url']     = esc_url( get_permalink( $real_post ) );
-				$related_posts[ $index ]['title']   = $this->_to_utf8( $this->get_title( $real_post->post_title, $real_post->post_content, $real_post->ID ) );
+				$related_posts[ $index ]['title']   = $this->_to_utf8( $this->_get_title( $real_post->post_title, $real_post->post_content ) );
 				$related_posts[ $index ]['date']    = get_the_date( '', $real_post );
 				$related_posts[ $index ]['excerpt'] = html_entity_decode( $this->_to_utf8( $this->_get_excerpt( $real_post->post_excerpt, $real_post->post_content ) ), ENT_QUOTES, 'UTF-8' );
 				$related_posts[ $index ]['img']     = $this->_generate_related_post_image_params( $real_post->ID );
@@ -1186,16 +1184,13 @@ EOT;
 		$post = get_post( $post_id );
 
 		return array(
-			'id'       => $post->ID,
-			'url'      => get_permalink( $post->ID ),
-			'url_meta' => array(
-				'origin'   => $origin,
-				'position' => $position,
-			),
-			'title'    => $this->_to_utf8( $this->get_title( $post->post_title, $post->post_content, $post->ID ) ),
-			'date'     => get_the_date( '', $post->ID ),
-			'format'   => get_post_format( $post->ID ),
-			'excerpt'  => html_entity_decode( $this->_to_utf8( $this->_get_excerpt( $post->post_excerpt, $post->post_content ) ), ENT_QUOTES, 'UTF-8' ),
+			'id' => $post->ID,
+			'url' => get_permalink( $post->ID ),
+			'url_meta' => array( 'origin' => $origin, 'position' => $position ),
+			'title' => $this->_to_utf8( $this->_get_title( $post->post_title, $post->post_content ) ),
+			'date' => get_the_date( '', $post->ID ),
+			'format' => get_post_format( $post->ID ),
+			'excerpt' => html_entity_decode( $this->_to_utf8( $this->_get_excerpt( $post->post_excerpt, $post->post_content ) ), ENT_QUOTES, 'UTF-8' ),
 			/**
 			 * Filters the rel attribute for the Related Posts' links.
 			 *
@@ -1245,20 +1240,14 @@ EOT;
 	/**
 	 * Returns either the title or a small excerpt to use as title for post.
 	 *
-	 * @uses strip_shortcodes, wp_trim_words, __, apply_filters
-	 *
-	 * @param string $post_title   Post title.
-	 * @param string $post_content Post content.
-	 * @param int    $post_id Post ID.
-	 *
+	 * @param string $post_title
+	 * @param string $post_content
+	 * @uses strip_shortcodes, wp_trim_words, __
 	 * @return string
 	 */
-	protected function get_title( $post_title, $post_content, $post_id ) {
+	protected function _get_title( $post_title, $post_content ) {
 		if ( ! empty( $post_title ) ) {
-			return wp_strip_all_tags(
-				/** This filter is documented in core/src/wp-includes/post-template.php */
-				apply_filters( 'the_title', $post_title, $post_id )
-			);
+			return wp_strip_all_tags( $post_title );
 		}
 
 		$post_title = wp_trim_words( wp_strip_all_tags( strip_shortcodes( $post_content ) ), 5, '…' );
@@ -1628,7 +1617,6 @@ EOT;
 		$enabled = is_single()
 			&& ! is_attachment()
 			&& ! is_admin()
-			&& ! is_embed()
 			&& ( ! $this->_allow_feature_toggle() || $this->get_option( 'enabled' ) );
 
 		/**
@@ -1644,29 +1632,18 @@ EOT;
 	}
 
 	/**
-	 * Adds filters.
+	 * Adds filters and enqueues assets.
 	 *
 	 * @uses self::_enqueue_assets, self::_setup_shortcode, add_filter
 	 * @return null
 	 */
 	protected function _action_frontend_init_page() {
-		$this->_enqueue_assets( true, true );
+
+		$enqueue_script = ! ( class_exists( 'Jetpack_AMP_Support' ) && Jetpack_AMP_Support::is_amp_request() );
+		$this->_enqueue_assets( $enqueue_script, true );
 		$this->_setup_shortcode();
 
 		add_filter( 'the_content', array( $this, 'filter_add_target_to_dom' ), 40 );
-	}
-
-	/**
-	 * Determines if the scripts need be enqueued.
-	 *
-	 * @return bool
-	 */
-	protected function requires_scripts() {
-		return (
-			! ( class_exists( 'Jetpack_AMP_Support' ) && Jetpack_AMP_Support::is_amp_request() ) &&
-			! has_block( 'jetpack/related-posts' ) &&
-			! Blocks::is_fse_theme()
-		);
 	}
 
 	/**
@@ -1676,9 +1653,8 @@ EOT;
 	 * @return null
 	 */
 	protected function _enqueue_assets( $script, $style ) {
-		$dependencies = is_customize_preview() ? array( 'customize-base' ) : array();
-		// Do not enqueue scripts unless they are required.
-		if ( $script && $this->requires_scripts() ) {
+		$dependencies = is_customize_preview() ? array( 'customize-base' ) : array( 'jquery' );
+		if ( $script ) {
 			wp_enqueue_script(
 				'jetpack_related-posts',
 				Assets::get_file_url_for_environment(

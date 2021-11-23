@@ -689,11 +689,7 @@ class Jetpack_Color {
 
 	public function incrementLightness( $amount ) {
 		$hsl = $this->toHsl();
-
-		$h = isset( $hsl['h'] ) ? $hsl['h'] : 0;
-		$s = isset( $hsl['s'] ) ? $hsl['s'] : 0;
-		$l = isset( $hsl['l'] ) ? $hsl['l'] : 0;
-
+		extract( $hsl );
 		$l += $amount;
 		if ( $l < 0 ) $l = 0;
 		if ( $l > 100 ) $l = 100;
@@ -710,11 +706,7 @@ class Jetpack_Color {
 
 	public function incrementSaturation( $amount ) {
 		$hsl = $this->toHsl();
-
-		$h = isset( $hsl['h'] ) ? $hsl['h'] : 0;
-		$s = isset( $hsl['s'] ) ? $hsl['s'] : 0;
-		$l = isset( $hsl['l'] ) ? $hsl['l'] : 0;
-
+		extract( $hsl );
 		$s += $amount;
 		if ( $s < 0 ) $s = 0;
 		if ( $s > 100 ) $s = 100;
@@ -723,11 +715,8 @@ class Jetpack_Color {
 
 	public function toGrayscale() {
 		$hsl = $this->toHsl();
-
-		$h = isset( $hsl['h'] ) ? $hsl['h'] : 0;
+		extract( $hsl );
 		$s = 0;
-		$l = isset( $hsl['l'] ) ? $hsl['l'] : 0;
-
 		return $this->fromHsl( $h, $s, $l );
 	}
 
@@ -757,11 +746,7 @@ class Jetpack_Color {
 
 	public function incrementHue( $amount ) {
 		$hsl = $this->toHsl();
-
-		$h = isset( $hsl['h'] ) ? $hsl['h'] : 0;
-		$s = isset( $hsl['s'] ) ? $hsl['s'] : 0;
-		$l = isset( $hsl['l'] ) ? $hsl['l'] : 0;
-
+		extract( $hsl );
 		$h = ( $h + $amount ) % 360;
 		if ( $h < 0 ) $h = 360 - $h;
 		return $this->fromHsl( $h, $s, $l );

@@ -86,11 +86,19 @@ class MetaSlide {
         if (!($thumbnail_url = wp_get_attachment_image_url($image_id))) {
             return new WP_Error('update_failed', __('The requested image does not exist. Please try again.', 'ml-slider'), array('status' => 409));
         }
+
+        /*
+        * Verifies that the $slide_id is an actual slide (it currently has an image)
+        */
+        if (!($image_id_old = intval(get_post_meta($slide_id, '_thumbnail_id', true)))) {
+            return new WP_Error('update_failed', __('The requested slide does not exist or something is wrong with the current image. Please try again or remove this slide.', 'ml-slider'), array('status' => 409));
+        }
         
         /*
-        * Updates the thumbnail, assigns it to the slideshow, crops the image
+        * Updates and verifies that it worked. Checks that either the image is the same,
+        * or that the update was successful
         */
-        if (update_post_meta($slide_id, '_thumbnail_id', $image_id)) {
+        if (($image_id === $image_id_old) || update_post_meta($slide_id, '_thumbnail_id', $image_id, $image_id_old)) {
 
             if ($slideshow_id) {
                 $this->set_slider($slideshow_id);

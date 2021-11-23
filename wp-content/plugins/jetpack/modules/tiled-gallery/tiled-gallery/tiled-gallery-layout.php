@@ -1,6 +1,6 @@
 <?php
 abstract class Jetpack_Tiled_Gallery_Layout {
-	// Template allow list.
+	// Template whitelist
 	private static $templates = array( 'carousel-container', 'circle-layout', 'rectangular-layout', 'square-layout' );
 	private static $partials  = array( 'carousel-image-args', 'item' );
 
@@ -44,6 +44,10 @@ abstract class Jetpack_Tiled_Gallery_Layout {
 			return;
 		}
 
+		if ( isset( $context ) ) {
+			extract( $context );
+		}
+
 		/**
 		 * Filters the Tiled Gallery template path
 		 *
@@ -60,6 +64,10 @@ abstract class Jetpack_Tiled_Gallery_Layout {
 	private function partial( $name, $context = null ) {
 		if ( ! in_array( $name, self::$partials ) ) {
 			return;
+		}
+
+		if ( isset( $context ) ) {
+			extract( $context );
 		}
 
 		/**

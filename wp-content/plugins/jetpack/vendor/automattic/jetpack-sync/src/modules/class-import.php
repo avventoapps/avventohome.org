@@ -111,7 +111,7 @@ class Import extends Module {
 
 		// Get $importer from known_importers.
 		$known_importers = Settings::get_setting( 'known_importers' );
-		if ( is_string( $importer ) && isset( $known_importers[ $importer ] ) ) {
+		if ( isset( $known_importers[ $importer ] ) ) {
 			$importer = $known_importers[ $importer ];
 		}
 
@@ -122,8 +122,7 @@ class Import extends Module {
 				/**
 				 * Used for syncing the start of an import
 				 *
-				 * @since 1.6.3
-				 * @since-jetpack 7.3.0
+				 * @since 7.3.0
 				 *
 				 * @module sync
 				 *
@@ -137,8 +136,7 @@ class Import extends Module {
 				/**
 				 * Used for syncing the end of an import
 				 *
-				 * @since 1.6.3
-				 * @since-jetpack 7.3.0
+				 * @since 7.3.0
 				 *
 				 * @module sync
 				 *

@@ -73,14 +73,10 @@ window.jQuery(function($) {
 			slide_ids.push(media.toJSON().id);
 		});
 
-		if (APP) {
-			const message = slide_ids.length == 1 ? APP.__('Preparing 1 slide...', 'ml-slider') : APP.__('Preparing %s slides...')
-			APP.notifyInfo(
-				'metaslider/creating-slides',
-				APP.sprintf(message, slide_ids.length),
-				true
-			)
-		}
+		APP && APP.notifyInfo('metaslider/creating-slides', APP.sprintf(
+			APP._n('Preparing %s slide...', 'Preparing %s slides...', slide_ids.length, 'ml-slider'), 
+			slide_ids.length
+		), true)
 		
 		// Remove the events for image APIs
 		remove_image_apis()
@@ -120,14 +116,10 @@ window.jQuery(function($) {
 
 				// Add timeouts to give some breating room to the notice animations
 				setTimeout(function() {
-					if (APP) {
-						const message = slide_ids.length == 1 ? APP.__('1 slide added successfully', 'ml-slider') : APP.__('%s slides added successfully')
-						APP.notifySuccess(
-							'metaslider/slides-created',
-							APP.sprintf(message, slide_ids.length),
-							true
-						)
-					}
+					APP && APP.notifySuccess('metaslider/slides-created', APP.sprintf(
+						APP._n('%s slide added successfully', '%s slides added successfully', slide_ids.length, 'ml-slider'),
+						slide_ids.length
+					), true)
 					setTimeout(function() {
 						APP && APP.triggerEvent('metaslider/save')
 					}, 1000);
@@ -560,7 +552,7 @@ window.jQuery(function($) {
 
 		// bind an event to the slides table to update the menu order of each slide
 		// TODO: Remove this soon
-        $(".metaslider").on('resizeSlides', 'table#metaslider-slides-list', function(event) {
+        $(".metaslider table#metaslider-slides-list").live("resizeSlides", function(event) {
             var slideshow_width = $("input.width").val();
             var slideshow_height = $("input.height").val();
     
@@ -603,10 +595,10 @@ window.jQuery(function($) {
         });
     
         // helptext tooltips
-        $('.tipsy-tooltip').tipsy({className: 'msTipsy', live: false, delayIn: 500, html: true, gravity: 'e'})
-		$('.tipsy-tooltip-top').tipsy({live: false, delayIn: 500, html: true, gravity: 's'})
-		$('.tipsy-tooltip-bottom').tipsy({ live: false, delayIn: 500, html: true, gravity: 'n' })
-		$('.tipsy-tooltip-bottom-toolbar').tipsy({ live: false, delayIn: 500, html: true, gravity: 'n', offset: 2 })
+        $('.tipsy-tooltip').tipsy({className: 'msTipsy', live: true, delayIn: 500, html: true, gravity: 'e'})
+		$('.tipsy-tooltip-top').tipsy({live: true, delayIn: 500, html: true, gravity: 's'})
+		$('.tipsy-tooltip-bottom').tipsy({ live: true, delayIn: 500, html: true, gravity: 'n' })
+		$('.tipsy-tooltip-bottom-toolbar').tipsy({ live: true, delayIn: 500, html: true, gravity: 'n', offset: 2 })
     
 
 });
