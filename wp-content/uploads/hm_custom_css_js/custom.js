@@ -1,0 +1,1 @@
+$(function(){$(".jp-play").click()})
